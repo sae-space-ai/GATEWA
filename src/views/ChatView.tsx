@@ -1,6 +1,6 @@
 import { type Conversation, type BridgeStatus, type Assistant, type ModelInfo } from '../types';
 import { MessageBubble } from '../components/MessageBubble';
-import { Send, StopCircle, Plus, Trash2, RefreshCw, ChevronDown } from 'lucide-react';
+import { Send, StopCircle, Plus, Trash2, RefreshCw, ChevronDown, Bot } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface ChatViewProps {
@@ -194,23 +194,44 @@ export function ChatView({
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-6">
           {!conversation || conversation.messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4">
-                <span className="text-2xl">🤖</span>
-              </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                {bridgeStatus === 'online' ? '¿En qué puedo ayudarte?' : 'IA Local no disponible'}
-              </h2>
-              <p className="text-gray-400 text-sm max-w-md mb-4">
-                {bridgeStatus === 'online'
-                  ? `Conversando con ${selectedModel} a través de tu GATEWA Local Bridge.`
-                  : 'Tu bridge local no está disponible. Verifica que GATEWA Local Bridge esté ejecutándose en tu ordenador.'}
-              </p>
-              {activeAssistant && (
-                <div className="mt-2 px-4 py-2 bg-purple-900/30 border border-purple-700 rounded-lg text-sm text-purple-300">
-                  Usando asistente: <strong>{activeAssistant.name}</strong>
+            <div className="h-full flex flex-col items-center justify-center text-center px-4 relative">
+              <div className="absolute inset-0 pointer-events-none"
+                   style={{ background: 'radial-gradient(ellipse at center, rgba(212,132,26,0.05) 0%, transparent 60%)' }} />
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5 relative"
+                     style={{
+                       background: bridgeStatus === 'online' ? 'var(--gw-gradient-primary)' : 'var(--gw-bg-elevated)',
+                       boxShadow: bridgeStatus === 'online' ? 'var(--gw-glow-primary)' : 'none',
+                     }}>
+                  <img src="/gatewa-logo.svg" alt="" className="w-12 h-12" style={{ filter: bridgeStatus === 'online' ? 'brightness(10)' : 'none' }} />
                 </div>
-              )}
+                <h2 className="text-2xl font-bold text-[var(--gw-text-primary)] mb-2 tracking-tight">
+                  {bridgeStatus === 'online' ? '¿En qué puedo ayudarte?' : 'IA Local no disponible'}
+                </h2>
+                <p className="text-[var(--gw-text-muted)] text-sm max-w-md mb-4">
+                  {bridgeStatus === 'online'
+                    ? `Conversando con ${selectedModel} a través de tu GATEWA Local Bridge.`
+                    : 'Tu bridge local no está disponible. Consulta el panel de diagnóstico en la barra lateral para ver el estado detallado de cada eslabón.'}
+                </p>
+                {bridgeStatus !== 'online' && (
+                  <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
+                       style={{
+                         background: `${bridgeStatus === 'not_configured' ? 'var(--gw-text-dim)' : 'var(--gw-error)'}20`,
+                         color: bridgeStatus === 'not_configured' ? 'var(--gw-text-muted)' : 'var(--gw-error)',
+                         border: `1px solid ${bridgeStatus === 'not_configured' ? 'var(--gw-text-dim)' : 'var(--gw-error)'}40`,
+                       }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'currentColor' }} />
+                    {bridgeStatus === 'not_configured' ? 'Bridge no configurado - revisa DEPLOYMENT.md' : 'Verifica tu conexión'}
+                  </div>
+                )}
+                {activeAssistant && (
+                  <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm"
+                       style={{ background: 'rgba(192,132,252,0.15)', color: 'var(--gw-accent-300)', border: '1px solid rgba(192,132,252,0.3)' }}>
+                    <Bot size={14} />
+                    Usando asistente: <strong>{activeAssistant.name}</strong>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto space-y-4">

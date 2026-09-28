@@ -11,7 +11,8 @@ import { ActivityView } from './views/ActivityView';
 import { SettingsView } from './views/SettingsView';
 import { 
   type Message, type Conversation, type BridgeStatus, type ViewType,
-  type Workspace, type Assistant, type Document, type ModelInfo, type ActivityEntry 
+  type Workspace, type Assistant, type Document, type ModelInfo, type ActivityEntry,
+  type HealthResponse
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,24 +28,36 @@ function App() {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus>('checking');
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [isCheckingHealth, setIsCheckingHealth] = useState(true);
   const [selectedModel, setSelectedModel] = useState('qwen3:4b');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
 
-  // Check bridge health
+  // Check bridge health with granular diagnostics
   const checkHealth = useCallback(async () => {
+    setIsCheckingHealth(true);
     try {
       const res = await fetch('/api/health');
       if (res.ok) {
-        const data = await res.json();
-        setBridgeStatus(data.bridgeAvailable ? 'online' : 'offline');
-        addActivity('bridge', data.bridgeAvailable ? 'Bridge local conectado' : 'Bridge local desconectado');
+        const data: HealthResponse = await res.json();
+        setHealth(data);
+        setBridgeStatus(data.overall);
+        // Activity log only on status change
+        setBridgeStatus(prev => {
+          if (prev !== data.overall) {
+            addActivity('bridge', data.overall === 'online' ? 'Bridge local conectado' : `Bridge: ${data.overall}`);
+          }
+          return data.overall;
+        });
       } else {
-        setBridgeStatus('offline');
+        setBridgeStatus('error');
       }
     } catch {
-      setBridgeStatus('offline');
+      setBridgeStatus('error');
+    } finally {
+      setIsCheckingHealth(false);
     }
   }, []);
 
@@ -509,6 +522,8 @@ function App() {
       currentView={currentView}
       onNavigate={setCurrentView}
       bridgeStatus={bridgeStatus}
+      health={health}
+      isChecking={isCheckingHealth}
     >
       {renderView()}
     </Layout>

@@ -68,15 +68,27 @@ export interface ActivityEntry {
   metadata?: Record<string, unknown>;
 }
 
-export type BridgeStatus = 'online' | 'offline' | 'checking';
+export type BridgeStatus = 'online' | 'offline' | 'degraded' | 'error' | 'not_configured' | 'checking';
 export type ViewType = 'dashboard' | 'chat' | 'workspaces' | 'documents' | 'assistants' | 'models' | 'tools' | 'activity' | 'settings';
+
+export interface LinkDiagnostic {
+  status: BridgeStatus;
+  latencyMs?: number;
+  message?: string;
+  lastChecked: string;
+  name?: string;
+}
 
 export interface HealthResponse {
   status: string;
-  bridgeAvailable: boolean;
-  ollamaAvailable: boolean;
-  model: string;
+  overall: BridgeStatus;
+  cloudApi: LinkDiagnostic;
+  tunnel: LinkDiagnostic;
+  bridge: LinkDiagnostic;
+  ollama: LinkDiagnostic;
+  model: LinkDiagnostic;
   bridgeVersion?: string;
+  error?: string;
   timestamp: string;
 }
 

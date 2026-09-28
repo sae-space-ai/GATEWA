@@ -3,9 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GATEWA - Centro Privado de IA</title>
-    <meta name="description" content="GATEWA - Private AI Center and secure gateway between cloud and local AI" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+    <title>GATEWA — Local AI Gateway</title>
+    <meta name="description" content="GATEWA — Private AI Workspace. Centro privado de IA con motor local." />
+    <meta name="theme-color" content="#0A0B11" />
+    <link rel="icon" type="image/svg+xml" href="/gatewa-logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <style>
       html, body, #root {
         margin: 0;
@@ -14,13 +18,36 @@
         height: 100%;
       }
       body {
-        background-color: #111827;
-        color: #f3f4f6;
+        background-color: #07080C;
+        color: #F5F5F7;
+      }
+      /* Splash */
+      .gw-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #07080C;
+        z-index: 9999;
+      }
+      .gw-splash-logo {
+        width: 64px;
+        height: 64px;
+        animation: gw-splash-pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes gw-splash-pulse {
+        0%, 100% { opacity: 0.4; transform: scale(0.96); }
+        50% { opacity: 1; transform: scale(1); }
       }
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="gw-splash">
+        <img src="/gatewa-logo.svg" alt="" class="gw-splash-logo" />
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

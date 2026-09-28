@@ -91,8 +91,14 @@ export function SettingsView({ bridgeStatus }: SettingsViewProps) {
           </div>
         </div>
 
-        <div className="mt-6 text-center text-xs text-gray-600">
-          GATEWA v1.0.0 • Centro Privado de Inteligencia Artificial
+        <div className="mt-8 text-center">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <img src="/gatewa-logo.svg" alt="" className="w-6 h-6" />
+            <span className="text-sm font-bold gw-gradient-text">GATEWA</span>
+          </div>
+          <p className="text-xs text-[var(--gw-text-dim)]">
+            v1.0.0 • Private AI Workspace • Local AI Gateway
+          </p>
         </div>
       </div>
     </div>

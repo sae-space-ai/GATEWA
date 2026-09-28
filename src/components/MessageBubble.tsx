@@ -14,12 +14,18 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const isError = message.isError;
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} gw-animate-fade-in`}>
       <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-        isUser ? 'bg-blue-600 text-white' 
-        : isError ? 'bg-red-900/30 border border-red-700 text-red-200'
-        : 'bg-gray-700 text-gray-100'
-      }`}>
+        isError ? 'border' : ''
+      }`} style={{
+        background: isUser
+          ? 'var(--gw-gradient-primary)'
+          : isError
+            ? 'var(--gw-error-dim)'
+            : 'var(--gw-bg-elevated)',
+        color: isUser ? 'var(--gw-text-inverse)' : isError ? 'var(--gw-error)' : 'var(--gw-text-primary)',
+        border: isError ? '1px solid rgba(248,113,113,0.3)' : isUser ? 'none' : '1px solid var(--gw-border-subtle)',
+      }}>
         {isUser ? (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         ) : (
@@ -53,7 +59,7 @@ function CodeBlock(props: any) {
   const isInline = !match && !codeString.includes('\n');
 
   if (isInline) {
-    return <code className="bg-gray-800 px-1.5 py-0.5 rounded text-sm text-pink-300">{children}</code>;
+    return <code style={{ background: 'var(--gw-bg-void)', padding: '0.15em 0.4em', borderRadius: '4px', fontSize: '0.875em', color: 'var(--gw-accent-300)', border: '1px solid var(--gw-border-subtle)' }}>{children}</code>;
   }
 
   const handleCopy = async () => {

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="gw-brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4841A"/>
+      <stop offset="50%" stop-color="#C084FC"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="gw-brand-soft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4841A" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#22D3EE" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <!-- Portal base -->
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#0A0B11"/>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#gw-brand-soft)"/>
+  <rect x="4" y="4" width="56" height="56" rx="14" stroke="url(#gw-brand)" stroke-width="1.2" stroke-opacity="0.6"/>
+  <!-- G letterform as gateway portal -->
+  <path d="M 44 20 L 28 20 Q 18 20 18 32 Q 18 44 28 44 L 40 44 L 40 34 L 32 34" 
+        stroke="url(#gw-brand)" 
+        stroke-width="3.5" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="none"/>
+  <!-- Signal dots representing data flow -->
+  <circle cx="44" cy="20" r="2" fill="#D4841A"/>
+  <circle cx="40" cy="44" r="1.5" fill="#C084FC"/>
+  <circle cx="32" cy="34" r="1.5" fill="#22D3EE"/>
+</svg>

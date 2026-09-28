@@ -1,90 +1,131 @@
 import { type ReactNode } from 'react';
-import { type BridgeStatus, type ViewType } from '../types';
+import { type BridgeStatus, type ViewType, type HealthResponse } from '../types';
 import { 
   LayoutDashboard, MessageSquare, FolderKanban, FileText, 
-  Bot, Cpu, Wrench, Activity, Settings, Wifi, WifiOff, Loader2, Menu, X 
+  Bot, Cpu, Wrench, Activity, Settings, Menu, X, Loader2
 } from 'lucide-react';
 import { useState } from 'react';
+import { HealthPanel } from './HealthPanel';
 
 interface LayoutProps {
   children: ReactNode;
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
   bridgeStatus: BridgeStatus;
+  health?: HealthResponse | null;
+  isChecking?: boolean;
 }
 
-const navItems: { id: ViewType; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
-  { id: 'workspaces', label: 'Workspaces', icon: FolderKanban },
-  { id: 'documents', label: 'Documents', icon: FileText },
-  { id: 'assistants', label: 'Assistants', icon: Bot },
-  { id: 'models', label: 'Models', icon: Cpu },
-  { id: 'tools', label: 'Tools', icon: Wrench },
-  { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const navItems: { id: ViewType; label: string; icon: typeof LayoutDashboard; subtitle?: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, subtitle: 'Centro de control' },
+  { id: 'chat', label: 'Chat', icon: MessageSquare, subtitle: 'Conversación' },
+  { id: 'workspaces', label: 'Workspaces', icon: FolderKanban, subtitle: 'Proyectos' },
+  { id: 'documents', label: 'Documents', icon: FileText, subtitle: 'Archivos' },
+  { id: 'assistants', label: 'Assistants', icon: Bot, subtitle: 'Agentes' },
+  { id: 'models', label: 'Models', icon: Cpu, subtitle: 'Motores IA' },
+  { id: 'tools', label: 'Tools', icon: Wrench, subtitle: 'Habilidades' },
+  { id: 'activity', label: 'Activity', icon: Activity, subtitle: 'Registro' },
+  { id: 'settings', label: 'Settings', icon: Settings, subtitle: 'Configuración' },
 ];
 
-export function Layout({ children, currentView, onNavigate, bridgeStatus }: LayoutProps) {
+export function Layout({ children, currentView, onNavigate, bridgeStatus, health, isChecking }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const getStatusColor = (status: BridgeStatus) => {
+    switch (status) {
+      case 'online': return 'var(--gw-success)';
+      case 'offline': return 'var(--gw-error)';
+      case 'degraded': return 'var(--gw-warning)';
+      case 'error': return 'var(--gw-error)';
+      case 'not_configured': return 'var(--gw-text-dim)';
+      default: return 'var(--gw-warning)';
+    }
+  };
+
+  const getStatusLabel = (status: BridgeStatus) => {
+    switch (status) {
+      case 'online': return 'LOCAL AI ONLINE';
+      case 'offline': return 'LOCAL AI OFFLINE';
+      case 'degraded': return 'DEGRADADO';
+      case 'error': return 'ERROR';
+      case 'not_configured': return 'NO CONFIGURADO';
+      default: return 'VERIFICANDO...';
+    }
+  };
+
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-gray-100">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-2.5 bg-gray-800 border-b border-gray-700 shrink-0">
+    <div className="h-screen flex flex-col" style={{ background: 'var(--gw-bg-void)' }}>
+      {/* ── HEADER ── */}
+      <header className="gw-surface-glass flex items-center justify-between px-4 py-2.5 border-b border-[var(--gw-border-subtle)] shrink-0 relative z-50">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-gray-700 transition-colors lg:hidden"
+            className="p-2 rounded-lg hover:bg-[var(--gw-bg-elevated)] transition-colors lg:hidden"
             aria-label="Toggle menu"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-sm">
-              G
+          
+          {/* Logo + Brand */}
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <img src="/gatewa-logo.svg" alt="" className="w-9 h-9" />
+              <div
+                className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--gw-bg-base)]"
+                style={{ backgroundColor: getStatusColor(bridgeStatus) }}
+              />
             </div>
-            <h1 className="text-lg font-bold text-white tracking-tight">GATEWA</h1>
+            <div>
+              <h1 className="text-base font-bold tracking-tight gw-gradient-text leading-none">
+                GATEWA
+              </h1>
+              <p className="text-[10px] text-[var(--gw-text-dim)] tracking-widest uppercase leading-none mt-0.5">
+                Local AI Gateway
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Status indicator */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border"
+               style={{
+                 borderColor: `${getStatusColor(bridgeStatus)}40`,
+                 background: `${getStatusColor(bridgeStatus)}10`,
+               }}>
             {bridgeStatus === 'checking' && (
-              <>
-                <Loader2 size={14} className="animate-spin text-yellow-400" />
-                <span className="text-xs text-yellow-400 hidden sm:inline">Verificando...</span>
-              </>
+              <Loader2 size={12} className="animate-spin" style={{ color: 'var(--gw-warning)' }} />
             )}
-            {bridgeStatus === 'online' && (
-              <>
-                <Wifi size={14} className="text-green-400" />
-                <span className="text-xs text-green-400 font-medium">LOCAL AI ONLINE</span>
-              </>
+            {bridgeStatus !== 'checking' && (
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${bridgeStatus === 'online' ? 'gw-animate-pulse-glow' : ''}`}
+                style={{ backgroundColor: getStatusColor(bridgeStatus), color: getStatusColor(bridgeStatus) }}
+              />
             )}
-            {bridgeStatus === 'offline' && (
-              <>
-                <WifiOff size={14} className="text-red-400" />
-                <span className="text-xs text-red-400 font-medium">LOCAL AI OFFLINE</span>
-              </>
-            )}
+            <span
+              className="text-[11px] font-semibold tracking-wider"
+              style={{ color: getStatusColor(bridgeStatus) }}
+            >
+              {getStatusLabel(bridgeStatus)}
+            </span>
           </div>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
+        {/* ── SIDEBAR ── */}
         <aside
           className={`
             fixed lg:relative z-40 lg:z-auto
-            h-[calc(100vh-52px)] w-60 bg-gray-850 border-r border-gray-700
+            h-[calc(100vh-52px)] w-64
             flex flex-col transition-transform duration-300 shrink-0
+            border-r border-[var(--gw-border-subtle)]
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}
-          style={{ backgroundColor: '#1a1d23' }}
+          style={{ background: 'var(--gw-bg-base)' }}
         >
           <nav className="flex-1 overflow-y-auto p-3">
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {navItems.map(item => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
@@ -96,40 +137,59 @@ export function Layout({ children, currentView, onNavigate, bridgeStatus }: Layo
                       setSidebarOpen(false);
                     }}
                     className={`
-                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
                       ${isActive 
-                        ? 'bg-blue-600/20 text-blue-400 font-medium' 
-                        : 'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'
+                        ? 'text-[var(--gw-primary-300)]'
+                        : 'text-[var(--gw-text-muted)] hover:bg-[var(--gw-bg-elevated)] hover:text-[var(--gw-text-secondary)]'
                       }
                     `}
+                    style={isActive ? {
+                      background: 'linear-gradient(90deg, rgba(212,132,26,0.12) 0%, transparent 100%)',
+                      borderLeft: '2px solid var(--gw-primary-500)',
+                    } : {}}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
+                    <Icon size={17} />
+                    <div className="flex-1 text-left">
+                      <div className="font-medium">{item.label}</div>
+                      {item.subtitle && (
+                        <div className="text-[10px] opacity-60">{item.subtitle}</div>
+                      )}
+                    </div>
+                    {isActive && (
+                      <div className="w-1 h-4 rounded-full" style={{ background: 'var(--gw-gradient-primary)' }} />
+                    )}
                   </button>
                 );
               })}
             </div>
           </nav>
 
-          {/* Sidebar footer */}
-          <div className="p-3 border-t border-gray-700">
-            <div className="text-xs text-gray-500 text-center">
-              GATEWA v1.0.0
-            </div>
+          {/* Sidebar footer - Health Panel */}
+          <div className="p-3 border-t border-[var(--gw-border-subtle)]">
+            <HealthPanel health={health || null} isChecking={isChecking || false} />
           </div>
         </aside>
 
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Main content */}
-        <main className="flex-1 overflow-hidden flex flex-col">
-          {children}
+        {/* ── MAIN ── */}
+        <main className="flex-1 overflow-hidden flex flex-col relative">
+          {/* Subtle ambient gradient */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at 20% 0%, rgba(212,132,26,0.04) 0%, transparent 50%)',
+            }}
+          />
+          <div className="relative flex-1 flex flex-col overflow-hidden">
+            {children}
+          </div>
         </main>
       </div>
     </div>
