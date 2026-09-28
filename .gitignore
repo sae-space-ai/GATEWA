@@ -1,5 +1,39 @@
+# Dependencies
 node_modules/
-.next/
+local-gateway/node_modules/
+
+# Build output
 dist/
-build/
+
+# Environment files - NEVER commit secrets
+.env
+.env.local
+.env.production
+local-gateway/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
 *.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# Vercel
+.vercel
+.next/
+build/
