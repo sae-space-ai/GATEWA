@@ -1,13 +1,14 @@
 import { type HealthResponse, type LinkDiagnostic, type BridgeStatus } from '../types';
-import { ChevronDown, ChevronUp, CheckCircle2, XCircle, AlertCircle, Clock, Zap, Wifi, WifiOff, Server, Cpu, Cloud } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, XCircle, AlertCircle, Clock, Zap, Wifi, WifiOff, Server, Cpu, Cloud, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 interface HealthPanelProps {
   health: HealthResponse | null;
   isChecking: boolean;
+  onRetry?: () => void;
 }
 
-export function HealthPanel({ health, isChecking }: HealthPanelProps) {
+export function HealthPanel({ health, isChecking, onRetry }: HealthPanelProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (!health) {
@@ -23,6 +24,34 @@ export function HealthPanel({ health, isChecking }: HealthPanelProps) {
 
   const overallStatus = health.overall;
   const isOnline = overallStatus === 'online';
+
+  // Determine specific failure cause
+  const getFailureCause = (): string => {
+    if (isOnline) return 'Todos los sistemas operativos';
+    
+    if (overallStatus === 'not_configured') {
+      return 'Bridge no configurado - revisa DEPLOYMENT.md';
+    }
+    
+    // Check each link for specific failure
+    if (health.tunnel.status === 'offline' || health.tunnel.status === 'error') {
+      return 'Túnel no disponible';
+    }
+    if (health.bridge.status === 'offline' || health.bridge.status === 'error') {
+      return 'Bridge no responde';
+    }
+    if (health.bridge.status === 'not_configured') {
+      return 'Bridge no configurado';
+    }
+    if (health.ollama.status === 'offline') {
+      return 'Ollama no responde';
+    }
+    if (health.model.status === 'offline') {
+      return 'qwen3:4b no disponible';
+    }
+    
+    return 'Verificar conexión';
+  };
 
   const links = [
     { key: 'cloudApi', label: 'Cloud API', icon: Cloud, data: health.cloudApi },
@@ -74,18 +103,30 @@ export function HealthPanel({ health, isChecking }: HealthPanelProps) {
               {isOnline ? 'GATEWA LOCAL ONLINE' : 'GATEWA LOCAL OFFLINE'}
             </div>
             <div className="text-xs text-[var(--gw-text-muted)]">
-              {isOnline
-                ? 'Todos los sistemas operativos'
-                : `${links.filter(l => l.data.status !== 'online').length} enlace(s) con problema`
-              }
+              {getFailureCause()}
             </div>
           </div>
         </div>
-        {expanded ? (
-          <ChevronUp size={20} className="text-[var(--gw-text-muted)]" />
-        ) : (
-          <ChevronDown size={20} className="text-[var(--gw-text-muted)]" />
-        )}
+        <div className="flex items-center gap-2">
+          {!isOnline && onRetry && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRetry();
+              }}
+              disabled={isChecking}
+              className="p-1.5 rounded-lg hover:bg-[var(--gw-bg-elevated)] transition-colors disabled:opacity-50"
+              title="Reintentar"
+            >
+              <RefreshCw size={14} className={`text-[var(--gw-text-muted)] ${isChecking ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+          {expanded ? (
+            <ChevronUp size={20} className="text-[var(--gw-text-muted)]" />
+          ) : (
+            <ChevronDown size={20} className="text-[var(--gw-text-muted)]" />
+          )}
+        </div>
       </button>
 
       {/* Expanded diagnostic */}

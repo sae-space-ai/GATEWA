@@ -35,7 +35,19 @@ function App() {
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
 
-  // Check bridge health with granular diagnostics
+  // Activity logger - must be defined before checkHealth
+  const addActivity = useCallback((type: ActivityEntry['type'], message: string, metadata?: Record<string, unknown>) => {
+    const entry: ActivityEntry = {
+      id: uuidv4(),
+      type,
+      message,
+      timestamp: new Date().toISOString(),
+      metadata,
+    };
+    setActivities(prev => [entry, ...prev].slice(0, 100));
+  }, []);
+
+  // Check bridge health with granular diagnostics - single source of truth
   const checkHealth = useCallback(async () => {
     setIsCheckingHealth(true);
     try {
@@ -43,8 +55,8 @@ function App() {
       if (res.ok) {
         const data: HealthResponse = await res.json();
         setHealth(data);
-        setBridgeStatus(data.overall);
-        // Activity log only on status change
+        
+        // Update status and log activity on change
         setBridgeStatus(prev => {
           if (prev !== data.overall) {
             addActivity('bridge', data.overall === 'online' ? 'Bridge local conectado' : `Bridge: ${data.overall}`);
@@ -53,13 +65,15 @@ function App() {
         });
       } else {
         setBridgeStatus('error');
+        addActivity('bridge', 'Error al verificar bridge');
       }
     } catch {
       setBridgeStatus('error');
+      addActivity('bridge', 'No se pudo conectar con el backend');
     } finally {
       setIsCheckingHealth(false);
     }
-  }, []);
+  }, [addActivity]);
 
   useEffect(() => {
     checkHealth();
@@ -118,17 +132,6 @@ function App() {
       // Ignore storage errors
     }
   }, [conversations, workspaces, assistants, documents, activities, activeWorkspaceId]);
-
-  const addActivity = useCallback((type: ActivityEntry['type'], message: string, metadata?: Record<string, unknown>) => {
-    const entry: ActivityEntry = {
-      id: uuidv4(),
-      type,
-      message,
-      timestamp: new Date().toISOString(),
-      metadata,
-    };
-    setActivities(prev => [entry, ...prev].slice(0, 100));
-  }, []);
 
   const createNewConversation = useCallback((assistantId?: string) => {
     const newConv: Conversation = {
@@ -524,6 +527,7 @@ function App() {
       bridgeStatus={bridgeStatus}
       health={health}
       isChecking={isCheckingHealth}
+      onRetryHealth={checkHealth}
     >
       {renderView()}
     </Layout>

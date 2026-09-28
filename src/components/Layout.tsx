@@ -14,6 +14,7 @@ interface LayoutProps {
   bridgeStatus: BridgeStatus;
   health?: HealthResponse | null;
   isChecking?: boolean;
+  onRetryHealth?: () => void;
 }
 
 const navItems: { id: ViewType; label: string; icon: typeof LayoutDashboard; subtitle?: string }[] = [
@@ -28,7 +29,7 @@ const navItems: { id: ViewType; label: string; icon: typeof LayoutDashboard; sub
   { id: 'settings', label: 'Settings', icon: Settings, subtitle: 'Configuración' },
 ];
 
-export function Layout({ children, currentView, onNavigate, bridgeStatus, health, isChecking }: LayoutProps) {
+export function Layout({ children, currentView, onNavigate, bridgeStatus, health, isChecking, onRetryHealth }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getStatusColor = (status: BridgeStatus) => {
@@ -166,7 +167,11 @@ export function Layout({ children, currentView, onNavigate, bridgeStatus, health
 
           {/* Sidebar footer - Health Panel */}
           <div className="p-3 border-t border-[var(--gw-border-subtle)]">
-            <HealthPanel health={health || null} isChecking={isChecking || false} />
+            <HealthPanel 
+              health={health || null} 
+              isChecking={isChecking || false}
+              onRetry={onRetryHealth}
+            />
           </div>
         </aside>
 
