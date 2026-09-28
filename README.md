@@ -2,9 +2,22 @@
 
 **Centro Privado de Inteligencia Artificial y Pasarela Segura entre la Nube y la IA Local**
 
-GATEWA es una plataforma web profesional que permite utilizar modelos de inteligencia artificial ejecutados físicamente en tu propio ordenador, comenzando con Ollama + Qwen3:4b, con arquitectura extensible para futuros modelos, documentos, herramientas y aplicaciones.
+GATEWA es una **plataforma de orquestación de inteligencia artificial** con un núcleo algorítmico completo que permite utilizar modelos de IA ejecutados físicamente en tu propio ordenador. No es un simple chatbot: es un sistema modular y extensible para orquestar modelos, habilidades, herramientas, contexto, memoria, políticas y ejecución.
 
-## 🎯 Características V1
+## 🎯 Estado Actual (V1)
+
+### ✅ Núcleo Algorítmico Completo
+
+- ✅ **Orchestrator** - Núcleo que recibe solicitudes, identifica intención, construye plan, verifica permisos y coordina ejecución
+- ✅ **ModelRouter** - Descubre modelos, registra capacidades, selecciona modelo apropiado
+- ✅ **SkillsEngine** - 5 habilidades registradas (chat, resumen, traducción, código, análisis documental)
+- ✅ **ToolRegistry** - Herramientas controladas con schemas, validación, permisos, timeout
+- ✅ **ContextEngine** - Gestión de ventana de contexto, selección de información relevante
+- ✅ **MemoryManager** - 4 tipos de memoria (conversación, sesión, workspace, conocimiento) con políticas
+- ✅ **PromptRegistry** - System prompts versionados, plantillas, políticas
+- ✅ **PolicyEngine** - Políticas granulares de permisos con prioridad y condiciones
+
+### ✅ Infraestructura Funcional
 
 - ✅ **Chat con streaming** - Conversación en tiempo real con qwen3:4b
 - ✅ **Dashboard** - Estado del sistema, actividad, accesos rápidos
@@ -130,9 +143,29 @@ Ver [SECURITY.md](./SECURITY.md) para detalles.
 
 ## 📖 Documentación
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Arquitectura detallada
+- [ARCHITECTURE_CORE.md](./ARCHITECTURE_CORE.md) - **Arquitectura del Núcleo Algorítmico** (Orchestrator, ModelRouter, SkillsEngine, etc.)
+- [INVENTORY.md](./INVENTORY.md) - **Inventario completo** de módulos con propósito, input, output, dependencias, permisos, estado
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Arquitectura de infraestructura
 - [SECURITY.md](./SECURITY.md) - Seguridad y autenticación
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Guía completa de despliegue
+
+## 🚀 Próximas Versiones
+
+### V2 - Document Intelligence & RAG
+- Document Intelligence Pipeline (ingesta real de PDF, DOCX, TXT, MD, CSV)
+- Knowledge Layer (bases de conocimiento por workspace)
+- RAG (Retrieval Augmented Generation con chunking, embeddings, retrieval)
+
+### V3 - Workflows & Connectors
+- Workflow Engine (encadenamiento de pasos con estados y reintentos)
+- Connector Framework (GitHub, Google Drive, APIs, bases de datos)
+
+### V4 - Observability & Extensions
+- Observability completo (métricas, traces, logs estructurados)
+- Audit Trail (registro de auditoría)
+- Job Queue (tareas largas)
+- Feature Flags (capacidades experimentales)
+- Plugin SDK (extensiones con contratos estables)
 
 ## 🚀 Futuras Versiones
 
