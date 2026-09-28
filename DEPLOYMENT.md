@@ -1,477 +1,215 @@
-# Guía de Despliegue Completa
-
-## Índice
-
-1. [Requisitos](#requisitos)
-2. [Instalación en Windows](#instalación-en-windows)
-3. [Configuración del Local Gateway](#configuración-del-local-gateway)
-4. [Configuración del Túnel HTTPS](#configuración-del-túnel-https)
-5. [Despliegue en Vercel](#despliegue-en-vercel)
-6. [Verificación](#verificación)
-7. [Operación Diaria](#operación-diaria)
-8. [Troubleshooting](#troubleshooting)
-9. [Actualización](#actualización)
-
----
+# GATEWA - Guía de Despliegue
 
 ## Requisitos
 
-### Software necesario en tu Windows
+### Software en Windows
+- Windows 10/11
+- Node.js 18+
+- Ollama con qwen3:4b
+- cloudflared
+- Git
 
-| Software | Versión | Propósito |
-|----------|---------|-----------|
-| Windows | 10/11 | Sistema operativo |
-| Node.js | 18+ | Ejecutar el gateway |
-| Ollama | Latest | Motor de IA |
-| cloudflared | Latest | Túnel HTTPS |
-| Git | Latest | Control de versiones |
-
-### Cuentas necesarias
-
-| Servicio | Plan | Propósito |
-|----------|------|-----------|
-| GitHub | Free | Repositorio de código |
-| Vercel | Free | Despliegue cloud |
-| Cloudflare | Free | Túnel HTTPS |
+### Cuentas
+- GitHub (Free)
+- Vercel (Free)
+- Cloudflare (Free)
 
 ---
 
-## Instalación en Windows
+## 1. Instalación en Windows
 
-### 1. Instalar Node.js
-
+### Node.js
 ```powershell
-# Opción 1: winget
 winget install OpenJS.NodeJS.LTS
-
-# Opción 2: Descargar de https://nodejs.org/
+node --version  # >= 18
 ```
 
-Verificar:
-```powershell
-node --version   # Debe ser >= 18
-npm --version
-```
-
-### 2. Instalar Git
-
-```powershell
-winget install Git.Git
-```
-
-### 3. Instalar cloudflared
-
+### cloudflared
 ```powershell
 winget install Cloudflare.cloudflared
-```
-
-Verificar:
-```powershell
 cloudflared --version
 ```
 
-### 4. Verificar Ollama
-
+### Verificar Ollama
 ```powershell
 ollama --version
-ollama list
-# Debe mostrar qwen3:4b
-```
-
-Si Ollama no está corriendo:
-```powershell
-ollama serve
-# O simplemente abrir Ollama desde el menú inicio
+ollama list  # Debe mostrar qwen3:4b
 ```
 
 ---
 
-## Configuración del Local Gateway
-
-### 1. Clonar el repositorio
+## 2. Configurar GATEWA Local Bridge
 
 ```powershell
-git clone https://github.com/TU_USUARIO/ollama-chat.git
-cd ollama-chat
-```
-
-### 2. Instalar dependencias del gateway
-
-```powershell
-cd local-gateway
+git clone https://github.com/TU_USUARIO/gatewa.git
+cd gatewa\local-bridge
 npm install
-```
 
-### 3. Generar el secreto de autenticación
-
-```powershell
+# Generar secreto
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+# ⚠️ GUARDA ESTE VALOR
 
-**⚠️ IMPORTANTE: Guarda este valor. Lo necesitarás en múltiples lugares.**
-
-Ejemplo de salida:
-```
-a3f5b8c9d2e1f4a7b0c3d6e9f2a5b8c1d4e7f0a3b6c9d2e5f8a1b4c7d0e3f6
-```
-
-### 4. Crear el archivo .env
-
-```powershell
+# Crear .env
 copy .env.example .env
+# Editar .env con el secreto generado
 ```
 
-Editar `local-gateway/.env`:
-```env
-GATEWAY_PORT=3456
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=qwen3:4b
-GATEWAY_SECRET=a3f5b8c9d2e1f4a7b0c3d6e9f2a5b8c1d4e7f0a3b6c9d2e5f8a1b4c7d0e3f6
-MAX_PROMPT_SIZE=50000
-REQUEST_TIMEOUT=120000
-MAX_CONCURRENT_REQUESTS=3
-```
-
-**Reemplaza `GATEWAY_SECRET` con el valor generado en el paso 3.**
-
-### 5. Iniciar el gateway
-
+### Iniciar Bridge
 ```powershell
 npm start
 ```
 
 Deberías ver:
 ```
-╔══════════════════════════════════════════════╗
-║     OLLAMA LOCAL GATEWAY v1.0.0             ║
-╠══════════════════════════════════════════════╣
-║  Port:      3456                             ║
-║  Ollama:    http://127.0.0.1:11434           ║
-║  Model:     qwen3:4b                         ║
-║  Bind:      127.0.0.1 (localhost only)       ║
-║  Auth:      Bearer token enabled             ║
-╚══════════════════════════════════════════════╝
-
-✅ Ollama is reachable. Available models: qwen3:4b
-✅ Model "qwen3:4b" is available
+╔══════════════════════════════════════════════════╗
+║         GATEWA LOCAL BRIDGE v1.0.0              ║
+╠══════════════════════════════════════════════════╣
+║  ✅ Ollama is reachable                          ║
+║  ✅ Model "qwen3:4b" is available                ║
+╚══════════════════════════════════════════════════╝
 ```
 
-### 6. Verificar el gateway
-
-En otra terminal:
+### Verificar
 ```powershell
-# Health check (sin auth)
-curl http://127.0.0.1:3456/health
-
-# Health check (con auth) - reemplaza TU_SECRET
-curl -H "Authorization: Bearer TU_SECRET" http://127.0.0.1:3456/api/health
-
-# Probar chat
-curl -X POST http://127.0.0.1:3456/api/chat \
-  -H "Authorization: Bearer TU_SECRET" \
-  -H "Content-Type: application/json" \
-  -d "{\"messages\":[{\"role\":\"user\",\"content\":\"Hola\"}],\"model\":\"qwen3:4b\",\"stream\":false}"
+curl -H "Authorization: Bearer TU_SECRET" http://127.0.0.1:3456/health
 ```
 
 ---
 
-## Configuración del Túnel HTTPS
+## 3. Túnel HTTPS
 
-### Opción A: Túnel Rápido (URL temporal, para pruebas)
-
+### Opción A: Túnel Rápido (pruebas)
 ```powershell
 cloudflared tunnel --url http://127.0.0.1:3456
+# Copia la URL: https://xxx.trycloudflare.com
 ```
 
-Salida:
-```
-INF +-----------------------------------------------------------+
-INF | Your quick Tunnel has been created! Visit it at:          |
-INF | https://random-words-xyz.trycloudflare.com               |
-INF +-----------------------------------------------------------+
-```
-
-**Copia la URL `https://random-words-xyz.trycloudflare.com`**
-
-⚠️ Esta URL cambia cada vez que reinicias cloudflared. Para producción, usa la Opción B.
-
-### Opción B: Túnel Permanente (Recomendado para producción)
-
-#### 1. Login en Cloudflare
-
+### Opción B: Túnel Permanente (producción)
 ```powershell
 cloudflared tunnel login
-```
+cloudflared tunnel create gatewa-bridge
+cloudflared tunnel route dns gatewa-bridge gatewa.tudominio.com
+cloudflared tunnel run gatewa-bridge
 
-Se abrirá el navegador. Selecciona tu dominio.
-
-#### 2. Crear el túnel
-
-```powershell
-cloudflared tunnel create ollama-gateway
-```
-
-Anota el **Tunnel ID** (ej: `a1b2c3d4-e5f6-7890-abcd-ef1234567890`)
-
-#### 3. Configurar DNS
-
-```powershell
-cloudflared tunnel route dns ollama-gateway gateway.tudominio.com
-```
-
-#### 4. Crear archivo de configuración
-
-Crear `C:\Users\TU_USUARIO\.cloudflared\config.yml`:
-
-```yaml
-tunnel: a1b2c3d4-e5f6-7890-abcd-ef1234567890
-credentials-file: C:\Users\TU_USUARIO\.cloudflared\a1b2c3d4-e5f6-7890-abcd-ef1234567890.json
-
-ingress:
-  - hostname: gateway.tudominio.com
-    service: http://127.0.0.1:3456
-    originRequest:
-      noTLSVerify: true
-      connectTimeout: 10s
-  - service: http_status:404
-```
-
-#### 5. Iniciar el túnel
-
-```powershell
-cloudflared tunnel run ollama-gateway
-```
-
-#### 6. (Opcional) Instalar como servicio de Windows
-
-```powershell
+# Como servicio Windows:
 cloudflared service install
 ```
 
-Esto hace que el túnel se inicie automáticamente con Windows.
-
 ---
 
-## Despliegue en Vercel
+## 4. Desplegar GATEWA Cloud
 
-### 1. Crear repositorio en GitHub
-
+### GitHub
 ```powershell
-cd ollama-chat  # raíz del proyecto
+cd gatewa  # raíz del proyecto
 git init
 git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/TU_USUARIO/ollama-chat.git
+git commit -m "Initial GATEWA commit"
+git remote add origin https://github.com/TU_USUARIO/gatewa.git
 git push -u origin main
 ```
 
-### 2. Importar en Vercel
-
+### Vercel
 1. Ir a [vercel.com](https://vercel.com)
-2. "Add New" → "Project"
-3. Importar desde GitHub: `ollama-chat`
-4. Framework Preset: `Vite`
-5. **NO** cambiar Build Command ni Output Directory
+2. Importar repositorio `gatewa`
+3. Framework Preset: `Vite`
 
-### 3. Configurar Variables de Entorno
+### Variables de Entorno en Vercel
+| Variable | Valor |
+|----------|-------|
+| `GATEWA_BRIDGE_URL` | URL HTTPS del túnel |
+| `GATEWA_BRIDGE_SECRET` | Mismo secreto del bridge |
 
-En Vercel → Project → Settings → Environment Variables:
-
-| Variable | Valor | Entorno |
-|----------|-------|---------|
-| `GATEWAY_PUBLIC_URL` | `https://gateway.tudominio.com` o URL del túnel rápido | Production |
-| `GATEWAY_SECRET` | El mismo secreto del gateway local | Production |
-
-### 4. Desplegar
-
+### Desplegar
 ```powershell
-# Primera vez
-npx vercel
-
-# Producción
 npx vercel --prod
 ```
 
-O usar el despliegue automático desde GitHub (cada push a main).
+---
+
+## 5. Verificación
+
+- [ ] Bridge corriendo
+- [ ] Túnel activo
+- [ ] Vercel desplegado con variables
+- [ ] Abrir URL de Vercel → "LOCAL AI ONLINE"
+- [ ] Enviar mensaje → recibir respuesta
+- [ ] Open WebUI sigue funcionando
 
 ---
 
-## Verificación
+## 6. Operación Diaria
 
-### Checklist de verificación
+### Inicio
+1. Encender ordenador
+2. Verificar Ollama corriendo
+3. `cd local-bridge && npm start`
+4. `cloudflared tunnel run gatewa-bridge` (si no es servicio)
+5. Verificar "LOCAL AI ONLINE" en navegador
 
-- [ ] Gateway corriendo en Windows (`npm start` en local-gateway/)
-- [ ] Túnel activo (cloudflared corriendo)
-- [ ] Vercel desplegado con variables de entorno configuradas
-- [ ] Abrir URL de Vercel en navegador
-- [ ] Ver indicador "LOCAL ONLINE" en verde
-- [ ] Escribir un mensaje y recibir respuesta
-- [ ] Open WebUI sigue funcionando independientemente
+### Si usas túnel rápido
+La URL cambia cada vez:
+1. Copiar nueva URL
+2. Actualizar `GATEWA_BRIDGE_URL` en Vercel
+3. `npx vercel --prod`
 
-### Prueba de extremo a extremo
+---
+
+## 7. Troubleshooting
+
+### "LOCAL AI OFFLINE"
+1. Verificar Ollama: `curl http://127.0.0.1:11434/api/tags`
+2. Verificar Bridge: `npm start` en local-bridge/
+3. Verificar túnel: `cloudflared tunnel run gatewa-bridge`
+4. Verificar URL en Vercel coincide con túnel actual
+5. Verificar GATEWA_BRIDGE_SECRET idéntico en ambos lados
+
+### Error 503
+- Túnel caído o URL cambió
+
+### Error 403
+- GATEWA_BRIDGE_SECRET no coincide
+
+### Error 429
+- Rate limit alcanzado, esperar 1 minuto
+
+### Open WebUI no funciona
+- No relacionado con GATEWA
+- Verificar que apunta a http://127.0.0.1:11434
+
+---
+
+## 8. Actualización
 
 ```powershell
-# 1. Verificar gateway local
-curl http://127.0.0.1:3456/health
-
-# 2. Verificar túnel
-curl https://tu-tunnel-url.trycloudflare.com/health
-
-# 3. Verificar backend cloud
-curl https://tu-app.vercel.app/api/health
-```
-
----
-
-## Operación Diaria
-
-### Inicio del día
-
-1. Encender el ordenador
-2. Asegurar que Ollama está corriendo (verificar icono en bandeja)
-3. Iniciar el gateway:
-   ```powershell
-   cd ollama-chat\local-gateway
-   npm start
-   ```
-4. Iniciar el túnel (si no es servicio):
-   ```powershell
-   cloudflared tunnel run ollama-gateway
-   ```
-5. Verificar en el navegador que dice "LOCAL ONLINE"
-
-### Si usaste túnel rápido (temporal)
-
-Cada vez que reinicias cloudflared, la URL cambia:
-1. Copiar la nueva URL
-2. Actualizar `GATEWAY_PUBLIC_URL` en Vercel
-3. Redeploy: `npx vercel --prod`
-
-**Recomendación**: Usa túnel permanente para evitar esto.
-
-### Apagar
-
-1. Cerrar el navegador (la app cloud sigue "viva" pero muestra OFFLINE)
-2. Ctrl+C en la terminal del gateway
-3. Ctrl+C en la terminal del túnel (si no es servicio)
-
----
-
-## Troubleshooting
-
-### "LOCAL OFFLINE" en la aplicación
-
-**Causas posibles:**
-
-1. **Ollama no está corriendo**
-   ```powershell
-   # Verificar
-   curl http://127.0.0.1:11434/api/tags
-   # Si falla, iniciar Ollama
-   ollama serve
-   ```
-
-2. **Gateway no está corriendo**
-   ```powershell
-   cd local-gateway
-   npm start
-   ```
-
-3. **Túnel no está activo**
-   ```powershell
-   cloudflared tunnel run ollama-gateway
-   ```
-
-4. **URL del túnel cambió** (si usas túnel rápido)
-   - Verificar que `GATEWAY_PUBLIC_URL` en Vercel coincide con la URL actual del túnel
-
-5. **Secreto incorrecto**
-   - Verificar que `GATEWAY_SECRET` es idéntico en Vercel y en local-gateway/.env
-
-### Error 503 / Gateway unreachable
-
-- El túnel está caído o la URL cambió
-- Verificar que cloudflared está corriendo
-- Verificar la URL en Vercel
-
-### Error 403 / Forbidden
-
-- El `GATEWAY_SECRET` no coincide
-- Regenerar y actualizar en ambos lados
-
-### Error 429 / Too many requests
-
-- Rate limit alcanzado
-- Esperar 1 minuto e intentar de nuevo
-- Ajustar `MAX_CONCURRENT_REQUESTS` en el gateway si es necesario
-
-### El streaming no funciona
-
-- Verificar que el navegador soporta SSE
-- Verificar que no hay proxy intermedio que bloquee streaming
-- Probar con `stream: false` como alternativa
-
-### Open WebUI dejó de funcionar
-
-- Nuestra aplicación NO modifica Ollama
-- Si Open WebUI no funciona, es un problema independiente
-- Verificar que Open WebUI apunta a `http://127.0.0.1:11434`
-- Reiniciar Open WebUI
-
----
-
-## Actualización
-
-### Actualizar el código
-
-```powershell
-cd ollama-chat
+cd gatewa
 git pull origin main
-
-# Frontend (se redeploya automáticamente en Vercel si usas auto-deploy)
 npm install
 
-# Gateway (si hubo cambios)
-cd local-gateway
+# Bridge (si hubo cambios)
+cd local-bridge
 npm install
 # Reiniciar: Ctrl+C y npm start
 ```
 
-### Actualizar Ollama / modelo
-
+### Actualizar modelo
 ```powershell
-# Actualizar Ollama
-ollama --version  # Verificar versión actual
-
-# Pull nueva versión del modelo
-ollama pull qwen3:4b
-
-# O instalar un modelo adicional
-ollama pull llama3.2
-# (El selector de modelos en la UI lo detectará automáticamente)
-```
-
-### Actualizar cloudflared
-
-```powershell
-winget upgrade Cloudflare.cloudflared
+ollama pull qwen3:4b  # Nueva versión
+ollama pull llama3.2  # Modelo adicional
 ```
 
 ---
 
-## Backup y Recovery
+## 9. Backup
 
-### Archivos importantes a respaldar
-
-- `local-gateway/.env` (contiene el GATEWAY_SECRET)
-- `~/.cloudflared/config.yml` (configuración del túnel permanente)
-- `~/.cloudflared/<TUNNEL_ID>.json` (credenciales del túnel)
+Archivos importantes:
+- `local-bridge/.env` (GATEWA_BRIDGE_SECRET)
+- `~/.cloudflared/config.yml`
+- `~/.cloudflared/<TUNNEL_ID>.json`
 
 ### Recovery
-
-Si pierdes el GATEWAY_SECRET:
-1. Generar uno nuevo
-2. Actualizar en `local-gateway/.env`
-3. Actualizar en Vercel Environment Variables
-4. Reiniciar gateway
-5. Redeploy en Vercel (o simplemente esperar a que las variables se actualicen)
+Si pierdes el secreto:
+1. Generar nuevo
+2. Actualizar en `local-bridge/.env`
+3. Actualizar en Vercel
+4. Reiniciar bridge

@@ -1,7 +1,7 @@
 {
-  "name": "ollama-local-gateway",
+  "name": "gatewa-local-bridge",
   "version": "1.0.0",
-  "description": "Secure local gateway for Ollama - runs on Windows, authenticates cloud requests",
+  "description": "GATEWA Local Bridge - Secure bridge between GATEWA Cloud and local Ollama",
   "type": "module",
   "main": "src/index.js",
   "scripts": {

@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Backend Cloud API - Chat endpoint
-// Proxies requests to the Local Gateway with authentication
+// GATEWA Cloud Backend - Chat endpoint
+// Proxies requests to the GATEWA Local Bridge with authentication
 
-const GATEWAY_URL = process.env.GATEWAY_PUBLIC_URL;
-const GATEWAY_SECRET = process.env.GATEWAY_SECRET;
+const BRIDGE_URL = process.env.GATEWA_BRIDGE_URL;
+const BRIDGE_SECRET = process.env.GATEWA_BRIDGE_SECRET;
 
 // Rate limiting (in-memory, per-instance)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -43,13 +43,12 @@ function validateMessages(messages: unknown): boolean {
     const m = msg as Record<string, unknown>;
     if (!['user', 'assistant', 'system'].includes(m.role as string)) return false;
     if (typeof m.content !== 'string') return false;
-    if (m.content.length > 10000) return false; // Max 10KB per message
+    if (m.content.length > 10000) return false;
     return true;
   });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -62,20 +61,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Validate environment
-  if (!GATEWAY_URL || !GATEWAY_SECRET) {
+  if (!BRIDGE_URL || !BRIDGE_SECRET) {
     return res.status(500).json({ 
-      error: 'Gateway not configured. Set GATEWAY_PUBLIC_URL and GATEWAY_SECRET environment variables.' 
+      error: 'GATEWA Bridge not configured. Set GATEWA_BRIDGE_URL and GATEWA_BRIDGE_SECRET environment variables.' 
     });
   }
 
-  // Rate limiting
   const clientIp = getClientIp(req);
   if (!checkRateLimit(clientIp)) {
     return res.status(429).json({ error: 'Too many requests. Please wait before sending more messages.' });
   }
 
-  // Validate request body
   const { messages, model, stream } = req.body || {};
 
   if (!validateMessages(messages)) {
@@ -91,35 +87,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const shouldStream = stream !== false;
 
   try {
-    const gatewayResponse = await fetch(`${GATEWAY_URL}/api/chat`, {
+    const bridgeResponse = await fetch(`${BRIDGE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GATEWAY_SECRET}`,
-        'X-Request-Source': 'cloud-backend',
+        'Authorization': `Bearer ${BRIDGE_SECRET}`,
+        'X-GATEWA-Source': 'cloud-backend',
       },
       body: JSON.stringify({
         messages,
         model: validatedModel,
         stream: shouldStream,
       }),
-      signal: AbortSignal.timeout(120000), // 2 minute timeout
+      signal: AbortSignal.timeout(120000),
     });
 
-    if (!gatewayResponse.ok) {
-      const errorText = await gatewayResponse.text().catch(() => 'Unknown error');
-      return res.status(gatewayResponse.status).json({ 
-        error: `Gateway error: ${errorText}` 
+    if (!bridgeResponse.ok) {
+      const errorText = await bridgeResponse.text().catch(() => 'Unknown error');
+      return res.status(bridgeResponse.status).json({ 
+        error: `Bridge error: ${errorText}` 
       });
     }
 
-    if (shouldStream && gatewayResponse.body) {
-      // Stream the response
+    if (shouldStream && bridgeResponse.body) {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const reader = gatewayResponse.body.getReader();
+      const reader = bridgeResponse.body.getReader();
       const decoder = new TextDecoder();
 
       const pump = async (): Promise<void> => {
@@ -127,34 +122,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
-              res.write('data: [DONE]\n\n');
+              res.write(' [DONE]\n\n');
               res.end();
               return;
             }
             const chunk = decoder.decode(value, { stream: true });
             res.write(chunk);
           }
-        } catch (err) {
-          res.write(`data: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`);
+        } catch {
+          res.write(` ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`);
           res.end();
         }
       };
 
       await pump();
     } else {
-      // Non-streaming response
-      const data = await gatewayResponse.json();
+      const data = await bridgeResponse.json();
       return res.status(200).json(data);
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     
     if (errorMessage.includes('timeout') || errorMessage.includes('aborted')) {
-      return res.status(504).json({ error: 'Gateway timeout. The local service may be unavailable.' });
+      return res.status(504).json({ error: 'Bridge timeout. The local service may be unavailable.' });
     }
     
     if (errorMessage.includes('fetch') || errorMessage.includes('ECONNREFUSED')) {
-      return res.status(503).json({ error: 'Local gateway unreachable. Please check your local service.' });
+      return res.status(503).json({ error: 'GATEWA Local Bridge unreachable. Please check your local service.' });
     }
     
     return res.status(500).json({ error: `Internal error: ${errorMessage}` });

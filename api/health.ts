@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Health check endpoint - verifies connectivity to Local Gateway and Ollama
+// GATEWA Health check - verifies connectivity to Local Bridge and Ollama
 
-const GATEWAY_URL = process.env.GATEWAY_PUBLIC_URL;
-const GATEWAY_SECRET = process.env.GATEWAY_SECRET;
+const BRIDGE_URL = process.env.GATEWA_BRIDGE_URL;
+const BRIDGE_SECRET = process.env.GATEWA_BRIDGE_SECRET;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,40 +18,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!GATEWAY_URL || !GATEWAY_SECRET) {
+  if (!BRIDGE_URL || !BRIDGE_SECRET) {
     return res.status(200).json({
       status: 'degraded',
+      bridgeAvailable: false,
       ollamaAvailable: false,
       model: 'qwen3:4b',
-      message: 'Gateway not configured',
+      message: 'GATEWA Bridge not configured',
       timestamp: new Date().toISOString(),
     });
   }
 
   try {
-    const response = await fetch(`${GATEWAY_URL}/health`, {
+    const response = await fetch(`${BRIDGE_URL}/health`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${GATEWAY_SECRET}`,
+        'Authorization': `Bearer ${BRIDGE_SECRET}`,
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(10000),
     });
 
     if (response.ok) {
       const data = await response.json();
       return res.status(200).json({
         status: 'ok',
+        bridgeAvailable: true,
         ollamaAvailable: data.ollamaAvailable ?? false,
         model: data.model ?? 'qwen3:4b',
-        gatewayVersion: data.version ?? 'unknown',
+        bridgeVersion: data.version ?? 'unknown',
         timestamp: new Date().toISOString(),
       });
     } else {
       return res.status(200).json({
         status: 'degraded',
+        bridgeAvailable: false,
         ollamaAvailable: false,
         model: 'qwen3:4b',
-        message: `Gateway returned ${response.status}`,
+        message: `Bridge returned ${response.status}`,
         timestamp: new Date().toISOString(),
       });
     }
@@ -59,6 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     return res.status(200).json({
       status: 'error',
+      bridgeAvailable: false,
       ollamaAvailable: false,
       model: 'qwen3:4b',
       message: errorMessage,

@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+local-bridge/node_modules/
 local-gateway/node_modules/
 
 # Build output
@@ -9,6 +10,7 @@ dist/
 .env
 .env.local
 .env.production
+local-bridge/.env
 local-gateway/.env
 
 # IDE
